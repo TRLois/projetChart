@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Graphique des monnaies</title>
+</head>
+<body>
+    <h1>Graphique des monnaies utilisées</h1>
+    <div>
+        <button id="europeButton">Europe</button>
+        <button id="naButton">Amérique du Nord</button>
+    </div>
+    <canvas id="currencyChart" width="400" height="200"></canvas>
+
+    <script type="module">
+        import { loadData, countCurrencies, createOrUpdateCurrencyChart } from './action.js';
+
+        let currencyChart = null;
+
+        // Fonction pour charger les données d'un continent et mettre à jour le graphique
+        async function updateChart(continent) {
+            try {
+                const filePath = continent === 'Europe'
+                    ? './survey_results_WE.json'
+                    : './survey_results_NA.json';
+
+                const data = await loadData(filePath);
+                if (data.length === 0) {
+                    console.warn(`Aucune donnée disponible pour le fichier : ${filePath}`);
+                    return;
+                }
+
+                const currencyCounts = countCurrencies(data);
+                currencyChart = createOrUpdateCurrencyChart(currencyChart, currencyCounts);
+            } catch (error) {
+                console.error('Erreur détectée :', error.message);
+            }
+        }
+
+        // Ajout des gestionnaires d'événements pour les boutons
+        document.getElementById('europeButton').addEventListener('click', () => updateChart('Europe'));
+        document.getElementById('naButton').addEventListener('click', () => updateChart('Amérique du Nord'));
+
+        // Charger les données pour l'Europe au démarrage
+        updateChart('Europe');
+    </script>
+</body>
+</html>
