@@ -1,50 +1,99 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <title>Graphique des monnaies</title>
+    <title>Projet JS</title>
+    
+    <!-- Inclure jQuery depuis un CDN pour lire plus facilement Json-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Inclure Chart.js depuis un CDN pour faire des graphiques-->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <h1>Graphique des monnaies utilisées</h1>
-    <div>
-        <button id="europeButton">Europe</button>
-        <button id="naButton">Amérique du Nord</button>
-    </div>
-    <canvas id="currencyChart" width="400" height="200"></canvas>
+    <h1>Conversion des Salaires en Euros</h1>
+    <button id="convertButton">Lancer la Conversion</button>
+    <p id="status">Statut : En attente...</p>
 
-    <script type="module">
-        import { loadData, countCurrencies, createOrUpdateCurrencyChart } from './action.js';
-
-        let currencyChart = null;
-
-        // Fonction pour charger les données d'un continent et mettre à jour le graphique
-        async function updateChart(continent) {
+    <script>
+        // Fonction pour récupérer les taux de change via une API
+        async function fetchExchangeRates(baseCurrency = 'EUR') {
             try {
-                const filePath = continent === 'Europe'
-                    ? './survey_results_WE.json'
-                    : './survey_results_NA.json';
-
-                const data = await loadData(filePath);
-                if (data.length === 0) {
-                    console.warn(`Aucune donnée disponible pour le fichier : ${filePath}`);
-                    return;
-                }
-
-                const currencyCounts = countCurrencies(data);
-                currencyChart = createOrUpdateCurrencyChart(currencyChart, currencyCounts);
+                const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${baseCurrency}`);
+                if (!response.ok) throw new Error('Erreur lors de la récupération des taux de change.');
+                const data = await response.json();
+                return data.rates;
             } catch (error) {
-                console.error('Erreur détectée :', error.message);
+                console.error('Erreur lors du chargement des taux de change :', error.message);
+                return {};
             }
         }
 
-        // Ajout des gestionnaires d'événements pour les boutons
-        document.getElementById('europeButton').addEventListener('click', () => updateChart('Europe'));
-        document.getElementById('naButton').addEventListener('click', () => updateChart('Amérique du Nord'));
+        // Convertir les salaires en euros
+        function convertCompTotalToEuro(data, rates) {
+            return data.map(entry => {
+                const currencyCode = entry.Currency?.split('\t')[0]; // Extraire le code devise
+                const compTotal = parseFloat(entry.CompTotal);
 
-        // Charger les données pour l'Europe au démarrage
-        updateChart('Europe');
+                if (currencyCode && compTotal && rates[currencyCode]) {
+                    const compTotalInEuro = compTotal / rates[currencyCode];
+                    return { ...entry, CompTotalInEuro: compTotalInEuro.toFixed(2) };
+                }
+
+                return { ...entry, CompTotalInEuro: null };
+            });
+        }
+
+        // Charger les données JSON depuis une URL
+        async function loadData(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Erreur lors du chargement du fichier : ${url}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`Erreur : ${error.message}`);
+                return [];
+            }
+        }
+
+        // Sauvegarder les données converties (simulé dans le navigateur)
+        function saveData(data) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'converted_data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Processus complet : charger, convertir et sauvegarder
+        async function processAndSave(inputUrl) {
+            const statusElement = document.getElementById('status');
+            try {
+                statusElement.textContent = 'Récupération des taux de change...';
+                const rates = await fetchExchangeRates();
+
+                statusElement.textContent = `Chargement des données depuis ${inputUrl}...`;
+                const data = await loadData(inputUrl);
+
+                statusElement.textContent = 'Conversion des données...';
+                const convertedData = convertCompTotalToEuro(data, rates);
+
+                statusElement.textContent = 'Sauvegarde des données...';
+                saveData(convertedData);
+
+                statusElement.textContent = 'Conversion terminée. Les données ont été téléchargées.';
+            } catch (error) {
+                statusElement.textContent = `Erreur : ${error.message}`;
+                console.error(error);
+            }
+        }
+
+        // Gérer le clic sur le bouton pour lancer le processus
+        document.getElementById('convertButton').addEventListener('click', async () => {
+            await processAndSave('survey_results_NA.json');
+            await processAndSave('survey_results_WE.json');
+        });
     </script>
 </body>
 </html>
