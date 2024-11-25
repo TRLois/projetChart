@@ -10,6 +10,26 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <ul class="menu">
+        <li><a class="btn_menu">Partie 1 Graph</a>
+            <ul class="sousMenu">
+                <li><a href="part1Graph1_1.html" class="btn_sousMenu">Partie 1 Graph 1</a></li>
+                <li><a href="part1Graph1_2.html" class="btn_sousMenu">Partie 1 Graph 2</a></li>
+            </ul>
+        </li>
+        <li><a class="btn_menu">Partie 2 Graph</a>
+            <ul class="sousMenu">
+                <li><a href="part2Graph1_1.html" class="btn_sousMenu">Partie 1 Graph 1</a></li>
+                <li><a href="part2Graph1_2.html" class="btn_sousMenu">Partie 1 Graph 2</a></li>
+            </ul>
+        </li>
+        <li><a class="btn_menu">Partie 3 Graph</a>
+            <ul class="sousMenu">
+                <li><a href="part3Graph1_1.html" class="btn_sousMenu">Partie 1 Graph 1</a></li>
+                <li><a href="part3Graph1_2.html" class="btn_sousMenu">Partie 1 Graph 2</a></li>
+            </ul>
+        </li>
+    </ul>
     <h1>Revenu moyen d’un professionnel en fonction des plateformes de cloud utilisées</h1>
 
     <!-- Filtres -->
@@ -80,6 +100,9 @@
             const platformRevenues = {};
 
             data.forEach(entry => {
+                // Ignorer les documents où "PlatformHaveWorkedWith" est "NA"
+                if (entry.PlatformHaveWorkedWith === "NA") return;
+
                 // Filtrage par pays
                 if (country && entry.Country !== country) return;
 
