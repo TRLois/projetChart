@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Revenu Moyen par Plateforme</title>
+    
+    <!-- Inclure jQuery pour manipuler les fichiers JSON -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Inclure Chart.js pour créer les graphiques -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Revenu moyen d’un professionnel en fonction des plateformes de cloud utilisées</h1>
+
+    <!-- Filtres -->
+    <div>
+        <label for="continent">Continent :</label>
+        <select id="continent">
+            <option value="NA">Amérique</option>
+            <option value="WE">Europe et Autres</option>
+        </select>
+
+        <label for="country">Pays :</label>
+        <select id="country">
+            <option value="">Tous les pays</option>
+            <!-- Les pays seront ajoutés dynamiquement -->
+        </select>
+
+        <label for="experience">Années d'expérience :</label>
+        <input type="number" id="experience" value="1" min="1">
+        
+        <button id="updateChart">Mettre à jour le graphique</button>
+    </div>
+
+    <!-- Zone du graphique -->
+    <canvas id="cloudChart" width="800" height="400"></canvas>
+
+    <script>
+        let chart; // Référence au graphique pour le mettre à jour dynamiquement
+
+        // Fonction pour charger les données JSON en fonction du continent
+        async function loadData(continent) {
+            const url = continent === "NA" ? "data_NA.json" : "data_WE.json";
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Erreur lors du chargement des données : ${url}`);
+                return await response.json();
+            } catch (error) {
+                console.error(error);
+                return [];
+            }
+        }
+
+        // Fonction pour extraire les pays uniques à partir des données JSON
+        async function getUniqueCountries(continent) {
+            const data = await loadData(continent);
+            const countries = new Set();
+            
+            // Collecte des pays uniques
+            data.forEach(entry => {
+                if (entry.Country) {
+                    countries.add(entry.Country);
+                }
+            });
+
+            // Mise à jour du menu déroulant des pays
+            const countrySelect = document.getElementById("country");
+            countrySelect.innerHTML = '<option value="">Tous les pays</option>'; // Réinitialiser les options
+            countries.forEach(country => {
+                const option = document.createElement("option");
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            });
+        }
+
+        // Fonction pour calculer le revenu moyen par plateforme
+        function calculateAverageRevenue(data, filters) {
+            const { country, experience } = filters;
+            const platformRevenues = {};
+
+            data.forEach(entry => {
+                // Filtrage par pays
+                if (country && entry.Country !== country) return;
+
+                // Filtrage par années d'expérience
+                const workExp = parseInt(entry.WorkExp, 10);
+                if (experience && (!workExp || workExp < experience)) return;
+
+                // Calcul du revenu (en euros si disponible, sinon dans la devise d'origine)
+                const revenue = parseFloat(entry.CompTotalInEuro || entry.CompTotal);
+                if (!revenue) return;
+
+                // Extraction des plateformes utilisées
+                const platforms = entry.PlatformHaveWorkedWith?.split(';');
+                if (!platforms) return;
+
+                // Additionner les revenus pour chaque plateforme
+                platforms.forEach(platform => {
+                    if (!platformRevenues[platform]) {
+                        platformRevenues[platform] = { total: 0, count: 0 };
+                    }
+                    platformRevenues[platform].total += revenue;
+                    platformRevenues[platform].count += 1;
+                });
+            });
+
+            // Calculer les moyennes pour chaque plateforme
+            return Object.entries(platformRevenues).map(([platform, { total, count }]) => ({
+                platform,
+                averageRevenue: total / count
+            }));
+        }
+
+        // Fonction pour mettre à jour le graphique
+        async function updateChart() {
+            const continent = document.getElementById("continent").value;
+            const country = document.getElementById("country").value.trim();
+            const experience = parseInt(document.getElementById("experience").value, 10);
+
+            // Charger les données du fichier JSON
+            const data = await loadData(continent);
+
+            // Filtrer et calculer les revenus moyens
+            const filteredData = calculateAverageRevenue(data, { country, experience });
+
+            // Préparer les données pour le graphique
+            const labels = filteredData.map(item => item.platform);
+            const dataSet = filteredData.map(item => item.averageRevenue);
+
+            // Mettre à jour ou créer le graphique
+            if (chart) {
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = dataSet;
+                chart.update();
+            } else {
+                const ctx = document.getElementById("cloudChart").getContext("2d");
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Revenu moyen (€)',
+                            data: dataSet,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: "Revenu moyen (€)"
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: "Plateformes"
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Ajouter un gestionnaire d'événement pour le changement de continent
+        document.getElementById("continent").addEventListener("change", async function() {
+            const continent = this.value;
+            await getUniqueCountries(continent);  // Mettre à jour la liste des pays selon le continent sélectionné
+        });
+
+        // Ajouter un gestionnaire d'événement pour le bouton de mise à jour
+        document.getElementById("updateChart").addEventListener("click", updateChart);
+
+        // Charger le graphique initial (Amérique, toutes les plateformes, expérience = 1 an)
+        updateChart();
+        // Charger les pays pour le continent initial (Amérique)
+        getUniqueCountries("NA");
+
+    </script>
+</body>
+</html>

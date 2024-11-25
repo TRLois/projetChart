@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Projet JS</title>
+    
+    <!-- Inclure jQuery depuis un CDN pour lire plus facilement Json-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Inclure Chart.js depuis un CDN pour faire des graphiques-->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <h1>Conversion des Salaires en Euros</h1>
+    <button id="convertButton">Lancer la Conversion</button>
+    <p id="status">Statut : En attente...</p>
+
+    <script>
+        // Fonction pour récupérer les taux de change via une API
+        async function fetchExchangeRates(baseCurrency = 'EUR') {
+            try {
+                const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${baseCurrency}`);
+                if (!response.ok) throw new Error('Erreur lors de la récupération des taux de change.');
+                const data = await response.json();
+                return data.rates;
+            } catch (error) {
+                console.error('Erreur lors du chargement des taux de change :', error.message);
+                return {};
+            }
+        }
+
+        // Convertir les salaires en euros
+        function convertCompTotalToEuro(data, rates) {
+            return data.map(entry => {
+                const currencyCode = entry.Currency?.split('\t')[0]; // Extraire le code devise
+                const compTotal = parseFloat(entry.CompTotal);
+
+                if (currencyCode && compTotal && rates[currencyCode]) {
+                    const compTotalInEuro = compTotal / rates[currencyCode];
+                    return { ...entry, CompTotalInEuro: compTotalInEuro.toFixed(2) };
+                }
+
+                return { ...entry, CompTotalInEuro: null };
+            });
+        }
+
+        // Charger les données JSON depuis une URL
+        async function loadData(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Erreur lors du chargement du fichier : ${url}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`Erreur : ${error.message}`);
+                return [];
+            }
+        }
+
+        // Sauvegarder les données converties (simulé dans le navigateur)
+        function saveData(data) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'converted_data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Processus complet : charger, convertir et sauvegarder
+        async function processAndSave(inputUrl) {
+            const statusElement = document.getElementById('status');
+            try {
+                statusElement.textContent = 'Récupération des taux de change...';
+                const rates = await fetchExchangeRates();
+
+                statusElement.textContent = `Chargement des données depuis ${inputUrl}...`;
+                const data = await loadData(inputUrl);
+
+                statusElement.textContent = 'Conversion des données...';
+                const convertedData = convertCompTotalToEuro(data, rates);
+
+                statusElement.textContent = 'Sauvegarde des données...';
+                saveData(convertedData);
+
+                statusElement.textContent = 'Conversion terminée. Les données ont été téléchargées.';
+            } catch (error) {
+                statusElement.textContent = `Erreur : ${error.message}`;
+                console.error(error);
+            }
+        }
+
+        // Gérer le clic sur le bouton pour lancer le processus
+        document.getElementById('convertButton').addEventListener('click', async () => {
+            await processAndSave('survey_results_NA.json');
+            await processAndSave('survey_results_WE.json');
+        });
+    </script>
+</body>
+</html>
