@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revenu Moyen par Expérience</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Revenu Moyen des Professionnels</h1>
+
+        <!-- Choix du continent -->
+        <div class="select-container">
+            <label for="continentSelect">Choisissez un continent :</label>
+            <select id="continentSelect">
+                <option value="Europe">Europe</option>
+                <option value="America">Amérique</option>
+            </select>
+        </div>
+
+        <!-- Graphique des revenus moyens par expérience -->
+        <div class="chart-container">
+            <h2>Revenu moyen par expérience</h2>
+            <canvas id="experienceChart" width="400" height="200"></canvas>
+        </div>
+
+        <!-- Graphique des revenus moyens par niveau d'études -->
+        <div class="chart-container">
+            <h2>Revenu moyen par niveau d'études</h2>
+            <canvas id="educationChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
