@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revenu Moyen par Expérience</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="main.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Revenu Moyen des Professionnels</h1>
+
+        <!-- Choix du continent -->
+        <div class="select-container">
+            <label for="continentSelect">Choisissez un continent :</label>
+            <select id="continentSelect">
+                <option value="Europe">Europe</option>
+                <option value="America">Amérique</option>
+            </select>
+        </div>
+
+        <!-- Graphique des revenus moyens par expérience -->
+        <div class="chart-container">
+            <h2>Revenu moyen par expérience</h2>
+            <canvas id="experienceChart" width="400" height="200"></canvas>
+        </div>
+
+        <!-- Graphique des revenus moyens par niveau d'études -->
+        <div class="chart-container">
+            <h2>Revenu moyen par niveau d'études</h2>
+            <canvas id="educationChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+            <!-- Graphique des OS  -->
+
+    <div>
+        <label for="devTypeSelect">Métiers :</label>
+        <select id="devTypeSelect">
+            <option value="">Tous les métiers</option>
+            <option value="Developer, back-end">Back-end Developer</option>
+            <option value="Developer, front-end">Front-end Developer</option>
+            <option value="Developer, full-stack">Full-stack Developer</option>
+        </select>
+    
+        <label for="topValues">Top :</label>
+        <select id="topCountSelect">
+            <option value="5">Top 5</option>
+            <option value="6">Top 6</option>
+            <option value="7">Top 7</option>
+            <option value="8">Top 8</option>
+        </select>
+    </div>
+    
+    <h2>Top systèmes d'exploitation</h2>
+    <canvas id="operatingSystemsChart" width="800" height="400"></canvas>
+
+
+            <!-- Graphique des outils -->
+
+    <div>
+        <label for="devType">Métier :</label>
+        <select id="devType">
+            <option value="">Tous les métiers</option>
+            <option value="Developer, back-end">Back-end Developer</option>
+            <option value="Developer, front-end">Front-end Developer</option>
+            <option value="Developer, full-stack">Full-stack Developer</option>
+            <!-- Ajoutez d'autres métiers ici -->
+        </select>
+    
+        <label for="topNSelect">Top N :</label>
+        <select id="topNSelect">
+            <option value="5">Top 5</option>
+            <option value="6">Top 6</option>
+            <option value="7">Top 7</option>
+            <option value="8">Top 8</option>
+        </select>
+    </div>
+    <h2>Top systèmes des outils de communication</h2>
+    <canvas id="communicationToolsChart" width="800" height="400"></canvas>
+
+</body>
+</html>
