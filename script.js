@@ -108,6 +108,111 @@ export function calculateAverageByEducation(data) {
     return result;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Calcul du salaire par plateforme de cloud utilisé
+export function calculateAverageByPCloud(data) {
+    const groupCloud = {};
+
+    data.forEach(entry => {
+        const platforms = entry.PlatformHaveWorkedWith; // Liste des plateformes mentionnées
+        const currency = entry.Currency?.split('\t')[0];  // Récupère la devise
+        const salary = entry.CompTotal;
+
+        // Si la plateforme est "NA" ou la donnée est absente, on l'ignore
+        if (!platforms || platforms === 'NA') {
+            return; // Passer à l'entrée suivante
+        }
+
+        // Séparer les plateformes par un séparateur (ex : ; ou autre) et les traiter individuellement
+        const platformsArray = platforms.split(';').map(p => p.trim());
+
+        // Si le salaire n'est pas valide, on l'ignore
+        if (!salary || salary === 'NA' || isNaN(parseFloat(salary)) || parseFloat(salary) > MAX_SALARY) {
+            return;
+        }
+
+        // Convertir le salaire en euros
+        const salaryInEuro = convertToEuro(parseFloat(salary), currency);
+        if (salaryInEuro === null) {
+            return;
+        }
+
+        // Ajouter le salaire à chaque plateforme mentionnée
+        platformsArray.forEach(platform => {
+            if (!groupCloud[platform]) {
+                groupCloud[platform] = { total: 0, count: 0 };
+            }
+            groupCloud[platform].total += salaryInEuro;
+            groupCloud[platform].count++;
+        });
+    });
+
+    // Calculer la moyenne pour chaque plateforme
+    const result = Object.entries(groupCloud).map(([platform, group]) => ({
+        labelPlatformCloud: platform,
+        averageSalary: group.total / group.count
+    }));
+
+    console.log("Données calculées pour les plateformes cloud :", result);
+    return result;
+}
+
+// Calcul du salaire par frameworks de développement web utilisé
+export function calculateAverageByFrameworks(data) {
+    const groupFrameworks = {};
+
+    data.forEach(entry => {
+        const frameworks = entry.WebframeHaveWorkedWith; // Liste des frameworks mentionnés
+        const currency = entry.Currency?.split('\t')[0];  // Récupère la devise
+        const salary = entry.CompTotal;
+
+        // Si le framework est "NA" ou la donnée est absente, on l'ignore
+        if (!frameworks || frameworks === 'NA') {
+            return; // Passer à l'entrée suivante
+        }
+
+        // Séparer les frameworks par un séparateur (ex : ; ou autre) et les traiter individuellement
+        const frameworksArray = frameworks.split(';').map(f => f.trim());
+
+        // Si le salaire n'est pas valide, on l'ignore
+        if (!salary || salary === 'NA' || isNaN(parseFloat(salary)) || parseFloat(salary) > MAX_SALARY) {
+            return;
+        }
+
+        // Convertir le salaire en euros
+        const salaryInEuro = convertToEuro(parseFloat(salary), currency);
+        if (salaryInEuro === null) {
+            return;
+        }
+
+        // Ajouter le salaire à chaque framework mentionné
+        frameworksArray.forEach(framework => {
+            if (!groupFrameworks[framework]) {
+                groupFrameworks[framework] = { total: 0, count: 0 };
+            }
+            groupFrameworks[framework].total += salaryInEuro;
+            groupFrameworks[framework].count++;
+        });
+    });
+
+    // Calculer la moyenne pour chaque framework
+    const result = Object.entries(groupFrameworks).map(([framework, group]) => ({
+        labelFramework: framework,
+        averageSalary: group.total / group.count
+    }));
+
+    console.log("Données calculées pour les frameworks :", result);
+    return result;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
 // Calcul des OS les plus utilisés
 export function calculateTopOperatingSystems(data, devTypeFilter = '', topCount = 5) {
 
@@ -135,6 +240,7 @@ export function calculateTopOperatingSystems(data, devTypeFilter = '', topCount 
         .map(([os, count]) => ({ os, count }));
     return sortedOS;
 }
+
 
 // Calcul des outils les plus utilisés  
 export function calculateTopCommunicationTools(data, devTypeFilter, topN) {
@@ -167,39 +273,7 @@ export function calculateTopCommunicationTools(data, devTypeFilter, topN) {
 }
 
 
-// Créer ou mettre à jour un graphique avec Chart.js
-function createOrUpdateChart(chart, data, labelsKey, valuesKey, chartId, label) {
-    const ctx = document.getElementById(chartId).getContext('2d');
-    const labels = data.map(d => d[labelsKey]);
-    const values = data.map(d => d[valuesKey]);
 
-    if (chart) {
-        chart.data.labels = labels;
-        chart.data.datasets[0].data = values;
-        chart.update();
-        return chart;
-    } else {
-        return new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [{
-                    label: label,
-                    data: values,
-                    backgroundColor: 'blue',
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: true
-                    }
-                }
-            }
-        });
-    }
-}
 
 // Fonction pour créer ou mettre à jour le graphique des revenus par expérience
 export function createOrUpdateExperienceChart(chart, data) {
@@ -220,7 +294,10 @@ export function createOrUpdateExperienceChart(chart, data) {
                 datasets: [{
                     label: 'Revenu moyen (€)',
                     data: values,
-                    backgroundColor: 'blue',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',  // Couleur d'arrière-plan
+                    borderColor: 'rgba(54, 162, 235, 1)',      // Couleur des bordures
+                    borderWidth: 1
+                    
                 }]
             },
             options: {
@@ -260,6 +337,122 @@ export function createOrUpdateExperienceChart(chart, data) {
     }
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Création ou mise à jour du graphique des plateformes de cloud
+export function createOrUpdatePCloud(chart, data) {
+    const ctx = document.getElementById('pCloudChart')?.getContext('2d');
+    if (!ctx) {
+        console.error("Canvas 'pCloudChart' introuvable.");
+        return chart;
+    }
+
+    if (!data || data.length === 0) {
+        console.warn("Pas de données valides pour le graphique des plateformes cloud.");
+        return chart;
+    }
+
+    // Si le graphique existe déjà, on le détruit
+    destructionChart(chart);
+
+    const labels = data.map(d => d.labelPlatformCloud);  // Les plateformes
+    const values = data.map(d => d.averageSalary);      // Les revenus moyens
+
+    return new Chart(ctx, {
+        type: 'line', // Vous pouvez changer le type de graphique si nécessaire
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Revenu moyen (€)',
+                data: values,
+                backgroundColor: 'rgba(255, 159, 64, 0.2)',  // Couleur d'arrière-plan
+                borderColor: 'rgba(255, 159, 64, 1)',      // Couleur des bordures
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,  // Responsivité du graphique
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    min: 30000,
+                    title: {
+                        display: true,
+                        text: "Revenu moyen (€)"
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: "Plateformes de Cloud"
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Création ou mise à jour du graphique des frameworks
+export function createOrUpdateFrameworks(chart, data) {
+    const ctx = document.getElementById('frameworksChart')?.getContext('2d');
+    if (!ctx) {
+        console.error("Canvas 'frameworksChart' introuvable.");
+        return chart;
+    }
+
+    if (!data || data.length === 0) {
+        console.warn("Pas de données valides pour le graphique des frameworks.");
+        return chart;
+    }
+
+    // Si le graphique existe déjà, on le détruit
+    destructionChart(chart);
+
+    const labels = data.map(d => d.labelFramework);  // Les frameworks
+    const values = data.map(d => d.averageSalary);  // Les revenus moyens
+
+    return new Chart(ctx, {
+        type: 'line', // Type de graphique : barres ici
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Revenu moyen (€)',
+                data: values,
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',  // Couleur d'arrière-plan
+                borderColor: 'rgba(153, 102, 255, 1)',      // Couleur des bordures
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,  // Responsivité du graphique
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    min: 30000,
+                    title: {
+                        display: true,
+                        text: "Revenu moyen (€)"
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: "Frameworks de développement web"
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Détruit un graphique s'il existe
+function destructionChart(chart) {
+    if (chart) {
+        chart.destroy();
+    }
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // Fonction pour créer ou mettre à jour le graphique des revenus par expérience
 export function createOrUpdateEducationChart(chart, data) {
     const ctx = document.getElementById('educationChart').getContext('2d');
@@ -282,7 +475,9 @@ export function createOrUpdateEducationChart(chart, data) {
                 datasets: [{
                     label: 'Revenu moyen (€)',
                     data: values,
-                    backgroundColor: 'green',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',  // Couleur d'arrière-plan
+                    borderColor: 'rgba(75, 192, 192, 1)',      // Couleur des bordures
+                    borderWidth: 1
                 }]
             },
             options: {
@@ -306,6 +501,7 @@ export function createOrUpdateEducationChart(chart, data) {
         });
     }
 }
+
 
 //Fonction pour créer le graphique des OS
 export function createOrUpdateOperatingSystemsPieChart(chart, data) {
@@ -426,6 +622,10 @@ export function createOrUpdateCommunicationToolsPieChart(chart, data) {
         });
     }
 }
+
+
+
+
 
 
 

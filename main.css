@@ -1,0 +1,44 @@
+/* Appliquer une couleur de fond beige-jaune cassé à toute la page */
+body {
+    font-family: Arial, sans-serif; /* Police de caractères */
+    margin: 0;
+    padding: 0;
+}
+
+/* Style du menu */
+nav {
+    background-color: #ffeb3b; /* Fond jaune pour le menu */
+    padding: 10px 0; /* Espacement vertical */
+}
+
+/* Liste de navigation */
+.menu {
+    list-style-type: none; /* Retirer les puces de la liste */
+    margin: 0;
+    padding: 0;
+    text-align: center; /* Centrer les éléments */
+}
+
+/* Style des éléments de menu */
+.menu li {
+    display: inline; /* Afficher les éléments en ligne pour un menu horizontal */
+    margin: 0 15px; /* Espacement horizontal entre les éléments */
+}
+
+/* Style des liens dans le menu */
+.menu a {
+    text-decoration: none; /* Enlever le souligné des liens */
+    color: #000000; /* Couleur du texte noir */
+    font-size: 16px; /* Taille de police */
+    padding: 10px 20px; /* Espacement autour du texte */
+    display: inline-block; /* Afficher le lien comme un bloc en ligne */
+    border-radius: 5px; /* Bords arrondis pour les liens */
+    transition: background-color 0.3s ease; /* Effet de transition sur le changement de couleur */
+    font-weight: bold; /* Mettre en gras l'élément actif */
+}
+
+/* Changement de couleur au survol (hover) des liens */
+.menu a:hover {
+    background-color: #ffd54f; /* Couleur plus claire de jaune pour le survol */
+}
+

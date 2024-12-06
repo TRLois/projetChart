@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Compétences Techniques</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script type="module" src="part2.js"></script>
+        <link href="main.css" rel="stylesheet">
+    </head>
+    <body>
+
+        <nav>
+            <ul class="menu">
+                <li><a href="index.html" class="btn_menu">Expérience professionnelle</a></li>
+                <li><a href="part2.html" class="btn_menu">Compétences techniques</a></li>
+                <li><a href="part3.html" class="btn_menu">Technologies</a></li>
+            </ul>
+        </nav>
+
+        <div class="container">
+            <h1>Revenu Moyen des Professionnels par compétences Techniques</h1>
+
+            <!--Selection Continent-->
+            <div class="select-container">
+                <label for="continentSelect">Choisissez un continent :</label>
+                <select id="continentSelect">
+                    <option value="Europe">Europe</option>
+                    <option value="America">Amérique</option>
+                </select>
+            </div>
+            <!-- Selection Pays -->
+            <div class="select-container">
+                <label for="countrySelect">Choisissez un pays :</label>
+                <select id="countrySelect">
+                    <option value="">Sélectionner un pays</option>
+                </select>
+            </div>
+
+            <!-- Appel graphique des revenus moyens par plateforme de cloud -->
+            <div class="chart-container">
+                <h2>Revenu moyen par plateforme de cloud</h2>
+                <canvas id="pCloudChart"></canvas>
+            </div>
+            <!-- Appel graphique des revenus moyens par frameworks de développement web -->
+            <div class="chart-container">
+                <h2>Revenu moyen par frameworks de développement web</h2>
+                <canvas id="frameworksChart"></canvas>
+            </div>
+        </div>   
+
+    </body>
+</html>
