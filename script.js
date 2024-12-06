@@ -9,29 +9,6 @@ export async function loadData(filePath) {
 export const MAX_SALARY = 1_000_000; // Salaire maximum réaliste
 
 
-export function treatData(rawdata){
-    data = rawdata;
-    suppr = 0;
-    for (let i = 0; i<rawdata.length; i++) {
-        const currency = rawdata[i].Currency?.split('\t')[0]; // Récupérer la devise
-        const salary = rawdata[i].CompTotal; // Récupérer le salaire brut
-
-        // Vérifier si le salaire est valide et raisonnable
-        if (!salary || salary === 'NA' || isNaN(parseFloat(salary)) || parseFloat(salary) > MAX_SALARY) {
-            data.splice(i-suppr,1)
-            suppr += 1
-        }
-        else {
-            // Convertir le salaire en euros
-            const salaryInEuro = convertToEuro(parseFloat(salary), currency);
-            data[i-suppr].compTotal = salaryInEuro
-        }
-        
-    }
-
-    return data
-}
-
 // Taux de conversion pour toutes les devises présentes dans le fichier
 const exchangeRates = {
     GBP: 1.17, EUR: 1.00, CHF: 1.03, PLN: 0.21, USD: 0.95, CAD: 0.69,
@@ -57,6 +34,8 @@ function convertToEuro(amount, currency) {
     return null; // Si aucun taux n'est disponible
 }
 
+
+//Calcul du salaire par expérience
 export function calculateAverageByExperience(data) {
     const groups = {};
 
@@ -92,7 +71,7 @@ export function calculateAverageByExperience(data) {
 }
 
 
-
+//Calcul du salaire par niveau d'études
 export function calculateAverageByEducation(data) {
     const groups = {}; // Regrouper les données par niveau d'études
 
@@ -127,6 +106,64 @@ export function calculateAverageByEducation(data) {
 
     console.log(`Moyennes calculées pour les niveaux d'études :`, result);
     return result;
+}
+
+// Calcul des OS les plus utilisés
+export function calculateTopOperatingSystems(data, devTypeFilter = '', topCount = 5) {
+
+    const osCounts = {};
+
+    data.forEach(entry => {
+        // Filtrer par métier (DevType) si un filtre est défini
+        if (devTypeFilter && !entry.DevType?.includes(devTypeFilter)) {
+            return;
+        }
+
+        // Collecter les systèmes d'exploitation utilisés
+        const operatingSystems = entry.OpSysProfessionaluse?.split(';');
+        if (operatingSystems) {
+            operatingSystems.forEach(os => {
+                osCounts[os] = (osCounts[os] || 0) + 1;
+            });
+        }
+    });
+
+    // Trier les systèmes d'exploitation par leur utilisation
+    const sortedOS = Object.entries(osCounts)
+        .sort((a, b) => b[1] - a[1]) // Trier par fréquence d'utilisation
+        .slice(0, topCount) // Limiter au top N
+        .map(([os, count]) => ({ os, count }));
+    return sortedOS;
+}
+
+// Calcul des outils les plus utilisés  
+export function calculateTopCommunicationTools(data, devTypeFilter, topN) {
+    const toolsCount = {};
+
+    data.forEach(entry => {
+        // Filtrer par métier (DevType)
+        if (devTypeFilter && entry.DevType && !entry.DevType.includes(devTypeFilter)) {
+            return;
+        }
+
+        // Extraire les outils de communication utilisés
+        const tools = entry.OfficeStackSyncHaveWorkedWith?.split(';');
+        if (!tools) return;
+
+        tools.forEach(tool => {
+            toolsCount[tool] = (toolsCount[tool] || 0) + 1;
+        });
+    });
+
+    // Trier les outils par utilisation décroissante
+    const sortedTools = Object.entries(toolsCount)
+        .sort(([, countA], [, countB]) => countB - countA)
+        .slice(0, topN);
+
+    console.log("Outils triés :", sortedTools);
+
+    // Retourner les données formatées pour le graphique
+    return sortedTools.map(([tool, count]) => ({ tool, count }));
 }
 
 
@@ -223,7 +260,7 @@ export function createOrUpdateExperienceChart(chart, data) {
     }
 }
 
-
+// Fonction pour créer ou mettre à jour le graphique des revenus par expérience
 export function createOrUpdateEducationChart(chart, data) {
     const ctx = document.getElementById('educationChart').getContext('2d');
     const labels = data.map(d => d.education);
@@ -269,3 +306,124 @@ export function createOrUpdateEducationChart(chart, data) {
         });
     }
 }
+
+//Fonction pour créer le graphique des OS
+export function createOrUpdateOperatingSystemsPieChart(chart, data) {
+    console.log("Données pour le graphique circulaire des OS :", data);
+
+    const ctx = document.getElementById('operatingSystemsChart').getContext('2d');
+    const labels = data.map(d => d.os); // Noms des systèmes d'exploitation
+    const values = data.map(d => d.count); // Nombre d'utilisations
+
+    if (chart) {
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = values;
+        chart.update();
+        return chart;
+    } else {
+        return new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Utilisation des systèmes d’exploitation',
+                    data: values,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)',
+                        'rgba(0, 128, 128, 0.2)', 
+                        'rgba(128, 0, 128, 0.2)'  
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(0, 128, 128, 1)', 
+                        'rgba(128, 0, 128, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    tooltip: {
+                        enabled: true,
+                    }
+                },
+            },
+        });
+    }
+}
+
+// Focntion pour créer le graphique des outils
+export function createOrUpdateCommunicationToolsPieChart(chart, data) {
+    console.log("Données pour le graphique circulaire des outils de communication :", data);
+
+    const ctx = document.getElementById('communicationToolsChart').getContext('2d');
+    const labels = data.map(d => d.tool); // Noms des outils de communication
+    const values = data.map(d => d.count); // Nombre d'utilisations
+
+    if (chart) {
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = values;
+        chart.update();
+        return chart;
+    } else {
+        return new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Utilisation des outils de communication',
+                    data: values,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)',
+                        'rgba(0, 128, 128, 0.2)', 
+                        'rgba(128, 0, 128, 0.2)'  
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(0, 128, 128, 1)', 
+                        'rgba(128, 0, 128, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    tooltip: {
+                        enabled: true,
+                    }
+                },
+            },
+        });
+    }
+}
+
